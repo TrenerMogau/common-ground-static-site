@@ -1,5 +1,7 @@
 # Common Ground
 
+![Deployment status](https://github.com/TrenerMogau/common-ground-static-site/actions/workflows/deploy.yml/badge.svg)
+
 A small static website intended for AWS S3 static website hosting.
 
 **Project code:** `WTC-3JWZDDTJ`
@@ -42,6 +44,17 @@ The resulting URL is:
 ```text
 http://your-unique-bucket-name.s3-website-us-east-1.amazonaws.com
 ```
+
+## GitHub deployment status
+
+The workflow in `.github/workflows/deploy.yml` runs on every push to `main` and can also be started from the Actions tab. Add these repository secrets before using it:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `S3_BUCKET`
+
+The badge above shows whether the latest deployment succeeded or failed. Keep AWS credentials in GitHub repository secrets; never commit them to this project.
 
 ## Optional HTTPS with CloudFront
 
