@@ -15,18 +15,47 @@ jobs:
       - name: Check out site
         uses: actions/checkout@v4
 
+      - name: Verify site integrity
+        run: |
+          echo "Validating site structure and project requirements..."
+          test -f index.html || { echo "Missing index.html"; exit 1; }
+          test -f styles.css || { echo "Missing styles.css"; exit 1; }
+          test -f cloudfront.yaml || { echo "Missing cloudfront.yaml"; exit 1; }
+          grep -q "WTC-3JWZDDTJ" index.html || { echo "Missing required project code WTC-3JWZDDTJ in index.html"; exit 1; }
+          echo "Site integrity and mandatory project code verified."
+
       - name: Configure AWS credentials
+        if: ${{ env.AWS_KEY != '' && env.AWS_SECRET != '' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        env:
+          AWS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Upload site to S3
+        if: ${{ env.AWS_KEY != '' && env.AWS_SECRET != '' && env.S3_BUCKET != '' }}
+        env:
+          AWS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
         run: aws s3 sync . "s3://${{ secrets.S3_BUCKET }}" --exclude ".git/*" --exclude ".github/*" --exclude "*.ps1" --exclude "*.yaml" --exclude "README.md" --delete
 
       - name: Invalidate CloudFront cache
-        if: ${{ env.CLOUDFRONT_DIST_ID != '' }}
+        if: ${{ env.CLOUDFRONT_DIST_ID != '' && env.AWS_KEY != '' && env.AWS_SECRET != '' }}
         env:
+          AWS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           CLOUDFRONT_DIST_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DIST_ID" --paths "/*"
+
+      - name: Deployment status notice
+        if: ${{ env.AWS_KEY == '' || env.AWS_SECRET == '' || env.S3_BUCKET == '' }}
+        env:
+          AWS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          echo "::notice title=Deployment Validation Passed::Site integrity verified. To enable live AWS publishing on push, add AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and S3_BUCKET to GitHub repository secrets."
