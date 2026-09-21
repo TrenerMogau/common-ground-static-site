@@ -23,4 +23,10 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload site to S3
-        run: aws s3 sync . "s3://${{ secrets.S3_BUCKET }}" --exclude ".git/*" --exclude ".github/*" --exclude "deploy.ps1" --exclude "README.md" --delete
+        run: aws s3 sync . "s3://${{ secrets.S3_BUCKET }}" --exclude ".git/*" --exclude ".github/*" --exclude "*.ps1" --exclude "*.yaml" --exclude "README.md" --delete
+
+      - name: Invalidate CloudFront cache
+        if: ${{ env.CLOUDFRONT_DIST_ID != '' }}
+        env:
+          CLOUDFRONT_DIST_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DIST_ID" --paths "/*"

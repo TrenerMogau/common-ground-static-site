@@ -53,23 +53,56 @@ The workflow in `.github/workflows/deploy.yml` runs on every push to `main` and 
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`
 - `S3_BUCKET`
+- `CLOUDFRONT_DISTRIBUTION_ID` *(optional: automatically invalidates edge cache upon deployment)*
 
 The badge above shows whether the latest deployment succeeded or failed. Keep AWS credentials in GitHub repository secrets; never commit them to this project.
 
-## Optional HTTPS with CloudFront
+## Iteration 3 - Cloud Security with CloudFront & OAC
 
-For a real public site, request an ACM certificate in `us-east-1`, validate it with DNS, and create a Route 53 record for your domain. Then deploy the included CloudFormation template:
+Iteration 3 transitions the site from direct HTTP S3 hosting to an enterprise-grade secure HTTPS architecture powered by **Amazon CloudFront** and **Origin Access Control (OAC)**:
+
+- **Private S3 Origin:** Direct public access to the S3 bucket is blocked (`AWS::S3::BucketPublicAccessBlock`). Direct requests to S3 return `403 Forbidden`.
+- **SigV4 Authentication:** CloudFront signs requests using Origin Access Control (`AWS::CloudFront::OriginAccessControl`), so only CloudFront can read from the bucket.
+- **HTTPS Enforcement:** Viewer protocol policy automatically redirects all HTTP requests to HTTPS.
+- **Security Headers:** Enforces modern security headers (`Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options: SAMEORIGIN`, and `Referrer-Policy`).
+
+### Deploying CloudFront
+
+#### Option A: Quick deployment (Default CloudFront HTTPS domain)
+If you do not have a custom domain in Route 53, deploy with the default Amazon CloudFront certificate:
 
 ```powershell
-aws cloudformation deploy `
-	--stack-name common-ground-cdn `
-	--template-file cloudfront.yaml `
-	--parameter-overrides BucketName=your-unique-bucket-name DomainName=www.example.com CertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/example `
-	--capabilities CAPABILITY_IAM
+.\deploy-cdn.ps1 -BucketName your-unique-bucket-name
 ```
 
-Point the domain's Route 53 alias record at the CloudFront distribution shown in the stack outputs. CloudFront then provides HTTPS, caching, and a private S3 origin.
+The script outputs the secure HTTPS URL:
+```text
+https://dXXXXXXXXXXXXX.cloudfront.net
+```
 
-## Cost and security note
+#### Option B: Custom domain with Route 53 & ACM
 
-S3 website hosting is inexpensive for a small site, but its direct website endpoint is HTTP and requires public object access. For a real public site, the best next iteration is CloudFront in front of the bucket for HTTPS, caching, and a custom domain. That adds a little setup but keeps the S3 bucket private.
+1. **Request an ACM certificate** in `us-east-1`:
+```powershell
+aws acm request-certificate `
+  --domain-name www.example.com `
+  --validation-method DNS `
+  --region us-east-1
+```
+
+2. **Add DNS validation records** to your Route 53 hosted zone.
+
+3. **Deploy the CloudFormation stack** with your custom domain and certificate:
+```powershell
+.\deploy-cdn.ps1 `
+  --BucketName your-unique-bucket-name `
+  --DomainName www.example.com `
+  --CertificateArn arn:aws:acm:us-east-1:123456789012:certificate/your-cert-id
+```
+
+4. **Create a Route 53 alias record** pointing your custom domain to the CloudFront distribution domain name.
+
+### Verifying Cloud Security
+
+- **Direct S3 Endpoint:** `http://your-unique-bucket-name.s3-website-us-east-1.amazonaws.com` -> `403 Forbidden` (Origin is secured and private).
+- **CloudFront HTTPS Endpoint:** `https://dXXXXXXXXXXXXX.cloudfront.net` -> `200 OK` (HTTPS encrypted, cached, and authenticated via OAC).
