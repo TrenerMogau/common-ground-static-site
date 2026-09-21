@@ -2,7 +2,9 @@
 
 ![Deployment status](https://github.com/TrenerMogau/common-ground-static-site/actions/workflows/deploy.yml/badge.svg)
 
-A small static website intended for AWS S3 static website hosting.
+**🌐 Live Website URL:** [https://trenermogau.github.io/common-ground-static-site/](https://trenermogau.github.io/common-ground-static-site/)
+
+A thoughtful editorial static website hosted with modern cloud infrastructure and accessible worldwide.
 
 **Project code:** `WTC-3JWZDDTJ`
 
