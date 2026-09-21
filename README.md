@@ -2,9 +2,10 @@
 
 ![Deployment status](https://github.com/TrenerMogau/common-ground-static-site/actions/workflows/deploy.yml/badge.svg)
 
-**Live Website:** [https://trenermogau.github.io/common-ground-static-site/](https://trenermogau.github.io/common-ground-static-site/)
+**Live Website (AWS CloudFront CDN):** [https://d1o6xr7xtmjhru.cloudfront.net](https://d1o6xr7xtmjhru.cloudfront.net)  
+**Live Website (GitHub Pages Mirror):** [https://trenermogau.github.io/common-ground-static-site/](https://trenermogau.github.io/common-ground-static-site/)
 
-A quiet, editorial static website intended for AWS S3 static website hosting and Amazon CloudFront delivery.
+A quiet, editorial static website hosted on AWS S3 and delivered globally via Amazon CloudFront with Origin Access Control (OAC).
 
 **Project code:** `WTC-3JWZDDTJ`
 
@@ -120,7 +121,8 @@ The workflow in `.github/workflows/deploy.yml` triggers on push to `main`:
 
 | Verification Check | Target | Result |
 | :--- | :--- | :--- |
-| **Live URL Availability** | Public HTTPS endpoint | [Live Site](https://trenermogau.github.io/common-ground-static-site/) (HTTP 200 OK) |
+| **Live AWS CloudFront** | [https://d1o6xr7xtmjhru.cloudfront.net](https://d1o6xr7xtmjhru.cloudfront.net) | Active & Verified (HTTP 200 OK) |
+| **Live GitHub Pages** | [https://trenermogau.github.io/common-ground-static-site/](https://trenermogau.github.io/common-ground-static-site/) | Active & Verified (HTTP 200 OK) |
 | **Project Code Integrity** | `WTC-3JWZDDTJ` in `index.html` & `README.md` | Preserved |
 | **Owner / Author** | Mogau Mothapo (`trener.mogau.dev@gmail.com`) | Preserved across all files |
 | **CI/CD Pipeline** | `.github/workflows/deploy.yml` | Passing (`success`) |
