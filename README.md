@@ -108,3 +108,75 @@ aws acm request-certificate `
 
 - **Direct S3 Endpoint:** `http://your-unique-bucket-name.s3-website-us-east-1.amazonaws.com` -> `403 Forbidden` (Origin is secured and private).
 - **CloudFront HTTPS Endpoint:** `https://dXXXXXXXXXXXXX.cloudfront.net` -> `200 OK` (HTTPS encrypted, cached, and authenticated via OAC).
+
+## Iteration 4 - Evidence, Polish & Resource Cleanup
+
+Iteration 4 finalizes the project with verified deployment evidence, cross-device testing results, a documented resource inventory, and complete resource cleanup instructions.
+
+### Deployment Evidence
+
+| Attribute | Value | Status |
+| :--- | :--- | :--- |
+| **Live Website** | [https://trenermogau.github.io/common-ground-static-site/](https://trenermogau.github.io/common-ground-static-site/) | 🟢 Active (HTTP 200) |
+| **GitHub Repository** | [TrenerMogau/common-ground-static-site](https://github.com/TrenerMogau/common-ground-static-site) | 🟢 Synchronized |
+| **Deployment CI/CD** | [Workflow Runs](https://github.com/TrenerMogau/common-ground-static-site/actions/workflows/deploy.yml) | 🟢 Passing |
+| **Required Project Code** | `WTC-3JWZDDTJ` | 🟢 Preserved in site & docs |
+| **Owner / Author** | Mogau Mothapo (`trener.mogau.dev@gmail.com`) | 🟢 Preserved |
+
+### Verification & Testing Results
+
+- **Mobile & Desktop Responsiveness:** Tested across viewport widths (375px mobile, 768px tablet, 1200px desktop). Layout dynamically collapses into an intuitive single-column flow on mobile and expands to an editorial grid on desktop.
+- **Navigation & Anchors:** Verified in-page smooth-scrolling anchors:
+  - Skip to content (`#main-content`)
+  - Home / Top (`#top`)
+  - About (`#about`)
+  - Notes (`#notes`)
+- **Email Actions:** Verified all `mailto:trener.mogau.dev@gmail.com` links:
+  - Main navigation "Say hello" button
+  - Note 01 reply action with subject `Field note 01`
+  - Note 02 reply action with subject `Working principle 02`
+  - Note 03 reply action with subject `Question 03`
+- **Accessibility:** Semantic HTML5 (`<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<footer>`), valid heading structure (`<h1>` to `<h3>`), visible focus indicators (`:focus-visible`), and `prefers-reduced-motion` support.
+
+### AWS Resource Inventory
+
+When deployed to AWS via CloudFormation and PowerShell scripts:
+
+| Resource | AWS Service | Purpose |
+| :--- | :--- | :--- |
+| **Website Origin** | Amazon S3 | Private static site asset storage (HTML/CSS/assets) |
+| **Distribution** | Amazon CloudFront | Global edge caching, HTTPS termination, custom domain delivery |
+| **Origin Access** | CloudFront OAC | SigV4-authenticated access control to private S3 bucket |
+| **Security Policy** | CloudFront Response Headers | Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options |
+| **Automation Stack** | AWS CloudFormation | Infrastructure as Code deployment defined in `cloudfront.yaml` |
+
+### Resource Cleanup Guide
+
+To prevent recurring AWS charges after testing or evaluation, use either the automated teardown script or manual CLI commands:
+
+#### Automated Cleanup Script
+
+Run the included PowerShell teardown script:
+
+```powershell
+.\cleanup.ps1 -BucketName your-unique-bucket-name -Region us-east-1
+```
+
+The script automatically:
+1. Empties all objects and versions from the S3 bucket.
+2. Deletes the CloudFormation stack `common-ground-cdn` (which disables and deletes the CloudFront distribution and OAC).
+3. Deletes the empty S3 bucket.
+
+#### Manual Teardown via AWS CLI
+
+If cleaning up manually:
+
+```powershell
+# 1. Delete CloudFormation stack (removes CloudFront distribution and OAC)
+aws cloudformation delete-stack --stack-name common-ground-cdn --region us-east-1
+aws cloudformation wait stack-delete-complete --stack-name common-ground-cdn --region us-east-1
+
+# 2. Empty and delete S3 bucket
+aws s3 rm s3://your-unique-bucket-name --recursive
+aws s3api delete-bucket --bucket your-unique-bucket-name --region us-east-1
+```
